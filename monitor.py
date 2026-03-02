@@ -24,7 +24,7 @@ TARGETS = [
         "school_name": "电子科大",
         "url": "https://yz.uestc.edu.cn/sszs/tzgg.htm",
         "selector": ".main-text-list ul li a",
-        "keywords": ["调剂", "接收", "名额", "复试"]
+        "keywords": ["调剂", "接收", "名额", "复试", "复核"]
     },
     {
         "school_name": "北京交通",
