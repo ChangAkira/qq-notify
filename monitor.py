@@ -135,7 +135,7 @@ def check_updates():
 
 if __name__ == "__main__":
     print("🚀 研招网调剂监控脚本已启动...")
-    send_qq_msg("✅ 监控脚本已启动，每 5 分钟检查一次，并每 30 分钟汇报一次状态。")
+    send_qq_msg("✅ 监控脚本已启动，每 5 分钟检查一次，并每"+ str(HEARTBEAT_INTERVAL/60) + "分钟汇报一次状态。")
     last_heartbeat_time = time.time()
     
     while True:
