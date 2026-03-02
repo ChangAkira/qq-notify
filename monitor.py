@@ -11,7 +11,7 @@ from urllib.parse import urljoin
 TARGET_QQ = 2161879699  # 请修改为你的 QQ 号
 LANGBOT_PORT = 3000    # NapCatQQ HTTP 端口
 STATE_FILE = "monitor_state.json"
-HEARTBEAT_INTERVAL = 1800 
+HEARTBEAT_INTERVAL = 7200 
 
 TARGETS = [
 {
