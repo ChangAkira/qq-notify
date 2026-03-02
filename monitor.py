@@ -14,9 +14,15 @@ STATE_FILE = "monitor_state.json"
 HEARTBEAT_INTERVAL = 7200 
 
 TARGETS = [
-{
+    {
         "school_name": "哈工大",
         "url": "https://yzb.hit.edu.cn/8822/list.htm",
+        "selector": ".news_title a",
+        "keywords": ["调剂", "接收", "名额", "复试"]
+    },
+    {
+        "school_name": "哈工大计学部",
+        "url": "https://computing.hit.edu.cn/11474/list.htm",
         "selector": ".news_title a",
         "keywords": ["调剂", "接收", "名额", "复试"]
     },
@@ -26,9 +32,39 @@ TARGETS = [
         "selector": ".main-text-list ul li a",
         "keywords": ["调剂", "接收", "名额", "复试", "复核"]
     },
+    # {
+    #     "school_name": "电子科大计科院",
+    #     "url": "https://www.scse.uestc.edu.cn/tzgg/ygk.htm",
+    #     "selector": ".text-list ul li a",
+    #     "keywords": ["调剂", "接收", "名额", "复试", "复核"]
+    # },
+    # {
+    #     "school_name": "电子科大信软院",
+    #     "url": "https://sise.uestc.edu.cn/xwtz/tzgg/ygk.htm",
+    #     "selector": ".list-content a h2",
+    #     "keywords": ["调剂", "接收", "名额", "复试"]
+    # },
+    # {
+    #     "school_name": "电子科大智能院",
+    #     "url": "https://sise.uestc.edu.cn/xwtz/tzgg/ygk.htm",
+    #     "selector": ".col-md-12 a",
+    #     "keywords": ["调剂", "接收", "名额", "复试"]
+    # },
     {
         "school_name": "北京交通",
         "url": "https://yzb.bjtu.edu.cn/tzgg/index.htm",
+        "selector": ".list01 li a",
+        "keywords": ["调剂", "接收", "名额", "复试"]
+    },
+    {
+        "school_name": "北京交通软学院",
+        "url": "https://sse.bjtu.edu.cn/cms/item/?cat=108&page=1",
+        "selector": ".second_R_list li a",
+        "keywords": ["调剂", "接收", "名额", "复试"]
+    },
+    {
+        "school_name": "北京交通计学院",
+        "url": "https://cs.bjtu.edu.cn/tzgg/index.htm",
         "selector": ".list01 li a",
         "keywords": ["调剂", "接收", "名额", "复试"]
     },
@@ -38,6 +74,24 @@ TARGETS = [
         "selector": ".block-list.list-unstyled.gp-f16 li a",
         "keywords": ["调剂", "接收", "名额", "复试"]
     },
+    {
+        "school_name": "北京理工计学院",
+        "url": "https://cs.bit.edu.cn/tzgg/index.htm",
+        "selector": ".sub_054.ul-inline.sub_054_2 li a",
+        "keywords": ["调剂", "接收", "名额", "复试"]
+    },
+    # {
+    #     "school_name": "北京理工网安院",
+    #     "url": "https://cst.bit.edu.cn/zsjy/yjszs/index.htm",
+    #     "selector": ".sub_list003.ul-inline.effect.effect2.isView li a",
+    #     "keywords": ["调剂", "接收", "名额", "复试"]
+    # },
+    # {
+    #     "school_name": "北京理工人智院",
+    #     "url": "https://ai.bit.edu.cn/tzgg/index.htm",
+    #     "selector": ".sub_01 ul-inline li a",
+    #     "keywords": ["调剂", "接收", "名额", "复试"]
+    # },
     # {
     #     "school_name": "北邮",
     #     "url": "https://yzb.bupt.edu.cn/tzgg.htm",
