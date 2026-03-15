@@ -1,17 +1,26 @@
-import requests
+from DrissionPage import ChromiumPage
 from bs4 import BeautifulSoup
 import json
 import os
 import time
+import requests
 from datetime import datetime
 from urllib.parse import urljoin
+from dotenv import load_dotenv  # 🟢 新增：引入 dotenv 库
+
+# 🟢 加载 .env 文件中的配置到环境变量中
+load_dotenv()
 
 # ================= 配置区 =================
+# 使用 os.getenv() 读取环境变量，并进行必要的类型转换
+TARGET_QQ = int(os.getenv("TARGET_QQ", 0))          # 转为整数，默认值为 0
+SERVER_IP = os.getenv("SERVER_IP", "127.0.0.1")     # 字符串，默认本地
+LANGBOT_PORT = int(os.getenv("LANGBOT_PORT", 3000)) # 转为整数，默认 3000
+NAPCAT_TOKEN = os.getenv("NAPCAT_TOKEN", "")        # 字符串，默认为空
 
-TARGET_QQ = 2161879699  # 请修改为你的 QQ 号
-LANGBOT_PORT = 3000    # NapCatQQ HTTP 端口
 STATE_FILE = "monitor_state.json"
-HEARTBEAT_INTERVAL = 7200 
+HEARTBEAT_INTERVAL = 7200  
+
 
 TARGETS = [
     {
@@ -27,29 +36,29 @@ TARGETS = [
         "keywords": ["调剂", "接收", "名额", "复试"]
     },
     {
-        "school_name": "电子科大",
-        "url": "https://yz.uestc.edu.cn/sszs/tzgg.htm",
-        "selector": ".main-text-list ul li a",
-        "keywords": ["调剂", "接收", "名额", "复试", "复核"]
+        "school_name": "电子科大计科院",
+        "url": "https://www.scse.uestc.edu.cn/tzgg/ygk.htm",
+        "selector": ".text-list ul li a",
+        "keywords": ["调剂", "接收", "名额", "复试", "复核", "初试"]
     },
-    # {
-    #     "school_name": "电子科大计科院",
-    #     "url": "https://www.scse.uestc.edu.cn/tzgg/ygk.htm",
-    #     "selector": ".text-list ul li a",
-    #     "keywords": ["调剂", "接收", "名额", "复试", "复核"]
-    # },
-    # {
-    #     "school_name": "电子科大信软院",
-    #     "url": "https://sise.uestc.edu.cn/xwtz/tzgg/ygk.htm",
-    #     "selector": ".list-content a h2",
-    #     "keywords": ["调剂", "接收", "名额", "复试"]
-    # },
-    # {
-    #     "school_name": "电子科大智能院",
-    #     "url": "https://sise.uestc.edu.cn/xwtz/tzgg/ygk.htm",
-    #     "selector": ".col-md-12 a",
-    #     "keywords": ["调剂", "接收", "名额", "复试"]
-    # },
+    {
+        "school_name": "电子科大信软院",
+        "url": "https://sise.uestc.edu.cn/xwtz/tzgg/ygk.htm",
+        "selector": ".list-content > a",
+        "keywords": ["调剂", "接收", "名额", "复试", "复核", "初试"]
+    },
+    {
+        "school_name": "电子科大智能院",
+        "url": "https://icct.uestc.edu.cn/xwzx/tzgg.htm",
+        "selector": ".listtext_tit a",
+        "keywords": ["调剂", "接收", "名额", "复试", "复核", "初试"]
+    },
+    {
+        "school_name": "电子科大深研院",
+        "url": "https://sias.uestc.edu.cn/rcpy/yanjzs.htm",
+        "selector": ".lm_list ul li a",
+        "keywords": ["调剂", "接收", "名额", "复试", "复核", "初试"]
+    },
     {
         "school_name": "北京交通",
         "url": "https://yzb.bjtu.edu.cn/tzgg/index.htm",
@@ -80,28 +89,27 @@ TARGETS = [
         "selector": ".sub_054.ul-inline.sub_054_2 li a",
         "keywords": ["调剂", "接收", "名额", "复试"]
     },
-    # {
-    #     "school_name": "北京理工网安院",
-    #     "url": "https://cst.bit.edu.cn/zsjy/yjszs/index.htm",
-    #     "selector": ".sub_list003.ul-inline.effect.effect2.isView li a",
-    #     "keywords": ["调剂", "接收", "名额", "复试"]
-    # },
-    # {
-    #     "school_name": "北京理工人智院",
-    #     "url": "https://ai.bit.edu.cn/tzgg/index.htm",
-    #     "selector": ".sub_01 ul-inline li a",
-    #     "keywords": ["调剂", "接收", "名额", "复试"]
-    # },
-    # {
-    #     "school_name": "北邮",
-    #     "url": "https://yzb.bupt.edu.cn/tzgg.htm",
-    #     "selector": ".tzgg ul li",
-    #     "keywords": ["调剂", "接收", "名额", "复试"]
-    # }
+    {
+        "school_name": "北京理工网安院",
+        "url": "https://cst.bit.edu.cn/zsjy/yjszs/index.htm",
+        "selector": ".sub_list003.ul-inline.effect.effect2.isView li a",
+        "keywords": ["调剂", "接收", "名额", "复试"]
+    },
+    {
+        "school_name": "北京理工人智院",
+        "url": "https://ai.bit.edu.cn/tzgg/index.htm",
+        "selector": ".sub_01 ul li a",
+        "keywords": ["调剂", "接收", "名额", "复试"]
+    },
+    {
+        "school_name": "北邮",
+        "url": "https://yzb.bupt.edu.cn/tzgg.htm",
+        "selector": ".tzgg ul li",
+        "keywords": ["调剂", "接收", "名额", "复试"]
+    }
 ]
 
 # ================= 核心逻辑 =================
-
 def load_state():
     if os.path.exists(STATE_FILE):
         with open(STATE_FILE, 'r', encoding='utf-8') as f:
@@ -113,107 +121,99 @@ def save_state(state):
         json.dump(state, f, ensure_ascii=False, indent=4)
 
 def send_qq_msg(message):
-    api_url = f"http://127.0.0.1:{LANGBOT_PORT}/send_private_msg"
+    api_url = f"http://{SERVER_IP}:{LANGBOT_PORT}/send_private_msg"
     payload = {"user_id": TARGET_QQ, "message": message}
-    try:
-        resp = requests.post(api_url, json=payload, timeout=5)
-        if resp.status_code == 200:
-            print(f"[{datetime.now().strftime('%H:%M:%S')}] 消息推送成功！")
-    except Exception as e:
-        print(f"[{datetime.now().strftime('%H:%M:%S')}] 推送发生异常: {e}")
-
-def check_updates():
+    
+    # 🟢 新增请求头：拿着 Token 去敲门
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"
+        "Authorization": f"Bearer {NAPCAT_TOKEN}"
     }
+    
+    try:
+        # 🟢 注意：这里加了 headers=headers
+        resp = requests.post(api_url, json=payload, headers=headers, timeout=5)
+        if resp.status_code == 200:
+            print(f"[{datetime.now().strftime('%H:%M:%S')}] QQ 消息推送成功！")
+        else:
+            print(f"[{datetime.now().strftime('%H:%M:%S')}] 推送失败，状态码: {resp.status_code}")
+    except Exception as e:
+        print(f"[{datetime.now().strftime('%H:%M:%S')}] 推送网络异常: {e}")
+
+def check_updates(page):
     current_state = load_state()
     state_changed = False
 
-    with requests.Session() as session:
-        for target in TARGETS:
-            school = target["school_name"]
-            print(f"[{datetime.now().strftime('%H:%M:%S')}] 正在深度扫描 {school} 前5条公告...")
+    for target in TARGETS:
+        school = target["school_name"]
+        print(f"[{datetime.now().strftime('%H:%M:%S')}] 正在深度扫描 {school} ...")
 
-            # 【数据结构升级】兼容旧版的单字符串状态，转换为列表集合
-            if school not in current_state:
-                current_state[school] = []
-            elif isinstance(current_state[school], str):
-                current_state[school] = [current_state[school]]
+        if school not in current_state:
+            current_state[school] = []
+        elif isinstance(current_state[school], str):
+            current_state[school] = [current_state[school]]
 
-            try:
-                resp = session.get(target["url"], headers=headers, timeout=10)
-                resp.encoding = resp.apparent_encoding 
-                soup = BeautifulSoup(resp.text, 'html.parser')
+        try:
+            # 使用 DrissionPage 访问页面
+            page.get(target["url"])
+            
+            # 强制等待 3 秒，让你的真实浏览器完成所有验证码和盾的渲染
+            time.sleep(3) 
+            
+            # 获取页面源码
+            html_content = page.html
+            soup = BeautifulSoup(html_content, 'html.parser')
 
-                # 【核心修改】用 select 抓取所有匹配元素，并切片取前 5 个
-                elements = soup.select(target["selector"])[:5]
-                if not elements:
-                    print(f"[{datetime.now().strftime('%H:%M:%S')}] {school} 选择器未匹配。(HTTP 状态码: {resp.status_code})")
+            elements = soup.select(target["selector"])[:5]
+            if not elements:
+                print(f"[{datetime.now().strftime('%H:%M:%S')}] {school} 匹配失败。当前页面标题: [{page.title}]")
+                continue
+
+            for elem in reversed(elements):
+                a_tag = elem if elem.name == 'a' else elem.find('a')
+                if not a_tag:
                     continue
 
-                # 倒序遍历（reversed），这样如果学校连发两条，我们会先处理较早的那条，符合人类阅读习惯
-                for elem in reversed(elements):
-                    a_tag = elem if elem.name == 'a' else elem.find('a')
-                    if not a_tag:
-                        continue
+                href = a_tag.get('href', '')
+                full_link = urljoin(target["url"], href)
+                title = a_tag.get('title') or a_tag.get_text(strip=True)
+                title = " ".join(title.split())
 
-                    href = a_tag.get('href', '')
-                    full_link = urljoin(target["url"], href)
-                    
-                    title = a_tag.get('title') or a_tag.get_text(strip=True)
-                    title = " ".join(title.split())
+                if title and title not in current_state[school]:
+                    hit_keyword = any(kw in title for kw in target["keywords"])
+                    if hit_keyword:
+                        msg = f"🔔【{school} 本地监控更新】\n公告：{title}\n🔗 链接：{full_link}"
+                        send_qq_msg(msg)
+                    else:
+                        print(f"[{datetime.now().strftime('%H:%M:%S')}] 更新未命中: {title}")
 
-                    # 判断这条公告是否在已读列表中
-                    if title and title not in current_state[school]:
-                        hit_keyword = any(kw in title for kw in target["keywords"])
-                        if hit_keyword:
-                            msg = f"🔔【{school} 研招网更新】\n命中关键词公告：\n{title}\n🔗 链接：\n{full_link}"
-                            send_qq_msg(msg)
-                        else:
-                            print(f"[{datetime.now().strftime('%H:%M:%S')}] {school} 有更新，未命中调剂关键词: {title}")
+                    current_state[school].append(title)
+                    state_changed = True
+        
+            if len(current_state[school]) > 20:
+                current_state[school] = current_state[school][-20:]
 
-                        # 将新公告加入集合
-                        current_state[school].append(title)
-                        state_changed = True
-                
-                # 防止集合无限增大，每个学校最多保留最近的 20 条记录防重
-                if len(current_state[school]) > 20:
-                    current_state[school] = current_state[school][-20:]
-
-            except Exception as e:
-                print(f"[{datetime.now().strftime('%H:%M:%S')}] 检查 {school} 时发生网络错误: {e}")
+        except Exception as e:
+            print(f"[{datetime.now().strftime('%H:%M:%S')}] 扫描异常: {e}")
 
     if state_changed:
         save_state(current_state)
 
 if __name__ == "__main__":
-    print("🚀 研招网调剂监控脚本已启动...")
+    print("🚀 DrissionPage 真实浏览器接管模式启动...")
     send_qq_msg("✅ 监控脚本已启动，每 5 分钟检查一次，并每"+ str(HEARTBEAT_INTERVAL/60) + "分钟汇报一次状态。")
+    # 启动接管真实 Chrome 浏览器
+    # 运行这行代码时，你的电脑会自动打开一个 Chrome 浏览器窗口
+    page = ChromiumPage() 
+    
     last_heartbeat_time = time.time()
     
     while True:
-        check_updates()
+        check_updates(page)
         
         current_time = time.time()
         if current_time - last_heartbeat_time >= HEARTBEAT_INTERVAL:
-            current_state = load_state()
-            msg_lines = ["【状态测试】监控正常运行中 🟢"]
-            for target in TARGETS:
-                school = target["school_name"]
-                
-                # 获取该学校的最新一条标题（列表的最后一个元素）
-                school_history = current_state.get(school, [])
-                if isinstance(school_history, str):  # 兼容没来得及转化的旧数据
-                    latest_title = school_history
-                else:
-                    latest_title = school_history[-1] if school_history else "暂无数据"
-                    
-                msg_lines.append(f"[{school}]：{latest_title[:25]}...")
-            
-            msg_lines.append("👉 过去30分钟未找到新的调剂通知。")
-            send_qq_msg("\n".join(msg_lines))
+            send_qq_msg("【状态汇报】DrissionPage 监控正常运行中 🟢")
             last_heartbeat_time = current_time
-            print(f"[{datetime.now().strftime('%H:%M:%S')}] 已发送状态汇报。")
         
+        print(f"[{datetime.now().strftime('%H:%M:%S')}] 扫描完成，等待 5 分钟后继续...")
         time.sleep(300)

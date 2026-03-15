@@ -1,0 +1,12 @@
+# === 核心底层引擎：浏览器自动化与反爬终极武器 ===
+# DrissionPage：直接接管本地真实 Chrome 浏览器，无视绝大多数高校高级 WAF 与质询拦截
+DrissionPage>=4.0.0
+
+# === 数据提取与网络通信 ===
+# beautifulsoup4：用于快速解析 DOM 节点，精准提取公告标题和链接
+beautifulsoup4>=4.12.0
+
+# requests：用于向远端 NapCatQQ（或微信、钉钉等 Webhook）推送通知消息
+requests>=2.31.0
+
+python-dotenv>=1.0.0
