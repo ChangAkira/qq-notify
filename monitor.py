@@ -106,6 +106,12 @@ TARGETS = [
         "url": "https://yzb.bupt.edu.cn/tzgg.htm",
         "selector": ".tzgg ul li",
         "keywords": ["调剂", "接收", "名额", "复试"]
+    },
+    {
+        "school_name": "南开计网院",
+        "url": "https://cc.nankai.edu.cn/13297/list.htm",
+        "selector": "table tr[onclick]",  # 完美避开没有 onclick 的表头(<th>)
+        "keywords": ["调剂", "接收", "名额", "复试", "初试"]
     }
 ]
 
@@ -163,22 +169,46 @@ def check_updates(page):
             html_content = page.html
             soup = BeautifulSoup(html_content, 'html.parser')
 
+            # ... 前面保持不变 ...
             elements = soup.select(target["selector"])[:5]
             if not elements:
-                print(f"[{datetime.now().strftime('%H:%M:%S')}] {school} 匹配失败。当前页面标题: [{page.title}]")
+                print(f"[{datetime.now().strftime('%H:%M:%S')}] {school} 选择器未匹配。(HTTP 状态码: {resp.status_code})")
                 continue
 
             for elem in reversed(elements):
+                href = ""
+                title = ""
+
+                # 【逻辑分支 1】传统的 <a> 标签模式（兼容之前的学校）
                 a_tag = elem if elem.name == 'a' else elem.find('a')
-                if not a_tag:
+                if a_tag:
+                    href = a_tag.get('href', '')
+                    title = a_tag.get('title') or a_tag.get_text(strip=True)
+                
+                # 【逻辑分支 2】南开大学特供：隐藏在 tr onclick 里的链接模式
+                elif elem.name == 'tr' and elem.has_attr('onclick'):
+                    import re
+                    # 用正则把 window.location.href='' 里面的链接抠出来
+                    match = re.search(r"window\.location\.href=['\"]([^'\"]+)['\"]", elem['onclick'])
+                    if match:
+                        href = match.group(1)
+                    
+                    # 优先找带有特定 class 的 td 提取标题，找不到就提取整行的文字
+                    title_td = elem.find('td', class_='text-align-title')
+                    if title_td:
+                        title = title_td.get_text(strip=True)
+                    else:
+                        title = elem.get_text(strip=True)
+
+                # 如果两个分支都没拿到数据，说明匹配到了奇怪的东西，跳过
+                if not href and not title:
                     continue
 
-                href = a_tag.get('href', '')
                 full_link = urljoin(target["url"], href)
-                title = a_tag.get('title') or a_tag.get_text(strip=True)
                 title = " ".join(title.split())
 
                 if title and title not in current_state[school]:
+            # ... 下面发送 QQ 消息的逻辑保持不变 ...
                     hit_keyword = any(kw in title for kw in target["keywords"])
                     if hit_keyword:
                         msg = f"🔔【{school} 本地监控更新】\n公告：{title}\n🔗 链接：{full_link}"
