@@ -112,7 +112,14 @@ TARGETS = [
         "url": "https://cc.nankai.edu.cn/13297/list.htm",
         "selector": "table tr[onclick]",  # 完美避开没有 onclick 的表头(<th>)
         "keywords": ["调剂", "接收", "名额", "复试", "初试"]
+    },
+    {
+        "school_name": "北邮网",
+        "url": "https://scss.bupt.edu.cn/zsjy1/yjszs.htm",
+        "selector": ".Newslist ul li a", 
+        "keywords": ["调剂", "接收", "名额", "复试", "初试"]
     }
+
 ]
 
 # ================= 核心逻辑 =================
