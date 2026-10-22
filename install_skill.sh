@@ -28,8 +28,9 @@ fi
 
 skill_dir="$target/qq-notify"
 mkdir -p "$skill_dir/scripts"
-install -m 755 "$src_dir/notify.py" "$skill_dir/scripts/notify.py"
+install -m 755 "$src_dir/qqsend.py" "$skill_dir/scripts/qqsend.py"
+rm -f "$skill_dir/scripts/notify.py"  # 旧文件名；残留会让已装好的 skill 调到过期版本
 render "$skill_dir" >"$skill_dir/SKILL.md"
 
 echo "✅ 已为 $agent 安装 skill：$skill_dir"
-echo "   测试：python3 $skill_dir/scripts/notify.py --source $agent --task \"自检\" --dry-run"
+echo "   测试：python3 $skill_dir/scripts/qqsend.py task --source $agent --task \"自检\" --dry-run"
